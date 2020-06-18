@@ -1,14 +1,16 @@
 const fs = require('fs');
 const readline = require('readline');
+const FIDELITY = 0.5;
 
 const readInterface = readline.createInterface({
-    input: fs.createReadStream('input3.gcode'),
+    input: fs.createReadStream('input.gcode'),
     output: false,//process.stdout,
     console: false
 });
 
 let prevcoords = [];
 let prevtheta = 0;
+let linebuffer = [];
 
 readInterface.on('line', function(line) {
     if (line.trim().startsWith("G")){
@@ -20,24 +22,36 @@ readInterface.on('line', function(line) {
         let angle = 0;
 
         if (prevcoords.length > 0){
-            angle = calculateTheta(prevcoords, coords);
+            
+            if (Math.abs(coords[0] - prevcoords[0]) >= FIDELITY ||  Math.abs(coords[1] - prevcoords[1]) >= FIDELITY){
+                angle = calculateTheta(prevcoords, coords);
+                prevcoords = coords;
+                console.log(`${line} Z:${Math.round(angle)}`);
+                //for (const line of linebuffer){
+                //    console.log(line);
+                //}
+                linebuffer = [];
+            }else{
+                //
+                linebuffer.push(line)
+            }
+            
         }else{
             prevcoords = coords;
-        }
-        if (Math.abs(angle) > 5){
-            console.log(`M3 S0`);
-            console.log(`G0 Z:${Math.round(angle)}`);
-            console.log(`M3 S1000`);
-        }else if (Math.abs(angle) >= 0){
-            console.log(`${line} Z:${Math.round(angle)}`);
-        }else{
             console.log(line);
         }
-        
     }else{
+        //for (const line of linebuffer){
+        //    console.log(line);
+        //}
         console.log(line);
     }
+    //for (const line of linebuffer){
+    //    console.log(line);
+    //}
 });
+
+
 
 const calculateTheta = (previous, current)=>{
     
@@ -59,7 +73,7 @@ const calculateTheta = (previous, current)=>{
         case 0:
             
             theta = Math.atan(dx/dy)
-            console.log("quad 0" , deg(theta));
+            //console.log("quad 0" , deg(theta));
             break;
 
         case 1:
@@ -68,28 +82,28 @@ const calculateTheta = (previous, current)=>{
             
         //console.log("1--> dx:", dx , "dy", dy);
             theta = Math.PI/2 + Math.atan(dy/dx);
-            console.log("quad 1" , deg(theta));
+            //console.log("quad 1" , deg(theta));
             break;
 
         case 2:
             
             theta = Math.PI + Math.atan(dx/dy);
-            console.log("quad 2" , deg(theta));
+            //console.log("quad 2" , deg(theta));
             break;
 
         default:
             //console.log("3--->dx:", dx , "dy", dy);
             theta  = ((3*Math.PI) / 2) + Math.atan(dy/dx);
-            console.log("quad 3" , deg(theta));
+            //console.log("quad 3" , deg(theta));
     }
 
     const dir = prevtheta < theta ? 1 : -1;
     const tomove =  deg(Math.abs(theta-prevtheta));
     const currentangle = deg(theta);
 
-    console.log("current angle is now", currentangle);
-    console.log("previous angle was", deg(prevtheta));
-    console.log("so to move is ", tomove);
+    //console.log("current angle is now", currentangle);
+    //console.log("previous angle was", deg(prevtheta));
+    //console.log("so to move is ", tomove);
 
     prevtheta = theta;
 
@@ -116,7 +130,7 @@ const quadrant = (previous, current)=>{
      //   return -1;
    // }
    //TODO - fix whern dx =0 or dy==0
-    console.log("current", current, "previous", previous, "dx,dy", dx,dy);
+    //console.log("current", current, "previous", previous, "dx,dy", dx,dy);
    
     if (dx >= 0 && dy > 0){
         return 0;
@@ -130,6 +144,6 @@ const quadrant = (previous, current)=>{
     else  if (dx<0 && dy >= 0) {
         return 3;
     }
-    console.log("returning -1!!!!!");
+    
     return -1;
 }
