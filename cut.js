@@ -1,9 +1,10 @@
 const fs = require('fs');
 const readline = require('readline');
-const FIDELITY = 0.5;
+const FIDELITY = 2.0;
+const FILTER = true;
 
 const readInterface = readline.createInterface({
-    input: fs.createReadStream('input.gcode'),
+    input: fs.createReadStream('input5.gcode'),
     output: false,//process.stdout,
     console: false
 });
@@ -12,46 +13,76 @@ let prevcoords = [];
 let prevtheta = 0;
 let linebuffer = [];
 
+let currentangle = 0;
+
+readInterface.on("close", function(){
+    
+    console.log("G28");
+    console.log(`GO Z${-1*currentangle}`)
+});
+
 readInterface.on('line', function(line) {
     if (line.trim().startsWith("G")){
-        const tokens = line.split(/\s+/);
-     
-        const x = Number(tokens[1].replace("X",""));
-        const y = Number(tokens[2].replace("Y",""));
-        const coords = [x,y];
-        let angle = 0;
+        try{
+            const tokens = line.split(/\s+/);
+        
+            const x = Number(tokens[1].replace("X",""));
+            const y = Number(tokens[2].replace("Y",""));
+            const coords = [x,y];
+            let angle = 0;
 
-        if (prevcoords.length > 0){
-            
-            if (Math.abs(coords[0] - prevcoords[0]) >= FIDELITY ||  Math.abs(coords[1] - prevcoords[1]) >= FIDELITY){
-                angle = calculateTheta(prevcoords, coords);
-                prevcoords = coords;
-                console.log(`${line} Z:${Math.round(angle)}`);
-                //for (const line of linebuffer){
-                //    console.log(line);
-                //}
-                linebuffer = [];
+            if (prevcoords.length > 0){
+                
+                if (Math.abs(coords[0] - prevcoords[0]) >= FIDELITY ||  Math.abs(coords[1] - prevcoords[1]) >= FIDELITY){
+                    angle = calculateTheta(prevcoords, coords);
+                    prevcoords = coords;
+                    //if (Math.round(angle) > 0){
+                        console.log("M3 S0");
+                        console.log(`G0 Z${Math.round(angle)}`)
+                        console.log("G4 P2");
+                        console.log("M3 S1000");
+                        console.log(line);
+                       
+                    //}
+                    /*else{
+                        console.log(`G0 Z${Math.round(angle)}`);
+                        console.log("G4 P1");
+                        console.log(line);
+                    }*/
+                    currentangle += Math.round(angle);
+                    //console.log(`${line}`);
+                    printInterim(linebuffer);
+                    linebuffer = [];
+                }else{
+                    //
+                    linebuffer.push(line)
+                }
+                
             }else{
-                //
-                linebuffer.push(line)
+                prevcoords = coords;
+                console.log(line);
             }
-            
-        }else{
-            prevcoords = coords;
+        }
+        catch(e){
             console.log(line);
         }
     }else{
+        printInterim(linebuffer)
         //for (const line of linebuffer){
         //    console.log(line);
         //}
         console.log(line);
     }
-    //for (const line of linebuffer){
-    //    console.log(line);
-    //}
+    printInterim(linebuffer)
 });
 
-
+const printInterim = (buffer)=>{
+    if (!FILTER){
+        for (const line of buffer){
+            console.log(line);
+        }
+    }
+}
 
 const calculateTheta = (previous, current)=>{
     

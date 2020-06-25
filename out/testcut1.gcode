@@ -1,0 +1,104 @@
+; Start
+;
+; Operation:    0
+; Type:         Laser Cut
+; Paths:        2
+; Passes:       1
+; Cut rate:     10000 mm/min
+;
+
+
+; Pass 0
+
+; Pass 0 Path 0
+G0 X-43.56 Y0.48
+
+; constant power
+; M3
+
+; Adaptive Power ($31 must be set to 1)
+M4
+S1000.00
+S0
+G0 Z66
+S1000
+G1 X-10.56 Y15.41 F10000
+S0
+G0 Z62
+S1000
+G1 X-0.87 Y7.96
+G0 Z-39
+G1 X12.45 Y8.21
+S0
+G0 Z91
+S1000
+G1 X12.50 Y-1.27
+G0 Z-83
+G1 X19.03 Y-1.98
+G0 Z-94
+G1 X19.42 Y8.81
+S0
+G0 Z17
+S1000
+G1 X20.12 Y10.81
+G0 Z5
+G1 X21.04 Y12.81
+S0
+G0 Z6
+S1000
+G1 X22.25 Y14.81
+S0
+G0 Z10
+S1000
+G1 X23.98 Y16.82
+S0
+G0 Z11
+S1000
+G1 X25.98 Y18.39
+S0
+G0 Z11
+S1000
+G1 X27.98 Y19.42
+S0
+G0 Z9
+S1000
+G1 X29.98 Y20.07
+S0
+G0 Z8
+S1000
+G1 X31.98 Y20.44
+S0
+G0 Z6
+S1000
+G1 X33.99 Y20.60
+G0 Z5
+G1 X35.99 Y20.59
+G0 Z4
+G1 X37.99 Y20.44
+S0
+G0 Z68
+S1000
+G1 X45.22 Y-2.45
+S0
+G0 Z16
+S1000
+G1 X45.43 Y-11.79
+M5
+
+; Pass 0 Path 1
+; constant power
+; M3
+
+; Adaptive Power ($31 must be set to 1)
+M4
+S1000.00
+S0
+G0 Z59
+S1000
+G1 X29.55 Y-21.99 F10000
+S0
+G0 Z75
+S1000
+G1 X16.76 Y-10.20
+M5
+; End
