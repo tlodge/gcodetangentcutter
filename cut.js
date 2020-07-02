@@ -1,10 +1,11 @@
 const fs = require('fs');
 const readline = require('readline');
+const { kMaxLength } = require('buffer');
 const FIDELITY = 2.0;
 const FILTER = true;
 
 const readInterface = readline.createInterface({
-    input: fs.createReadStream('input5.gcode'),
+    input: fs.createReadStream('input6.gcode'),
     output: false,//process.stdout,
     console: false
 });
@@ -14,6 +15,7 @@ let prevtheta = 0;
 let linebuffer = [];
 
 let currentangle = 0;
+let OFFSET       = 6.2; /* 3.1 == 1cm */
 
 readInterface.on("close", function(){
     
@@ -30,36 +32,58 @@ readInterface.on('line', function(line) {
             const y = Number(tokens[2].replace("Y",""));
             const coords = [x,y];
             let angle = 0;
-
+           
             if (prevcoords.length > 0){
                 
                 if (Math.abs(coords[0] - prevcoords[0]) >= FIDELITY ||  Math.abs(coords[1] - prevcoords[1]) >= FIDELITY){
                     angle = calculateTheta(prevcoords, coords);
-                    prevcoords = coords;
-                    //if (Math.round(angle) > 0){
+                const radangle = rad(angle);
+                    //const ox =  OFFSET * Math.sin(radangle);
+                    //const oy =  OFFSET * Math.cos(radangle);
+                   
+                    const d =  Math.sqrt(((prevcoords[0]- coords[0]) * (prevcoords[0]- coords[0])) + ((prevcoords[1]- coords[1]) * (prevcoords[1]- coords[1])))
+                    
+                    const ox = prevcoords[0] -  ((OFFSET * (prevcoords[0] - coords[0])) / d);
+                    const oy = prevcoords[1] -  ((OFFSET * (prevcoords[1] - coords[1])) / d);
+                   
+                    const o2x = coords[0] + (coords[0] - prevcoords[0]) / d * OFFSET;
+                    const o2y = coords[1] + (coords[1] - prevcoords[1]) / d * OFFSET;
+                   
+                    //if (Math.abs(angle) > 12){
                         console.log("M3 S0");
                         console.log(`G0 Z${Math.round(angle)}`)
-                        console.log("G4 P2");
+                        console.log(`G0 X${ox} Y${oy}`)
+                        console.log(`G4 P${Math.abs(angle/40)}`);
                         console.log("M3 S1000");
-                        console.log(line);
+                        //console.log(line);
+                       
+                        console.log(line.replace(`X${x}`, `X${(o2x).toFixed(2)}`).replace(`Y${y}`, `Y${(o2y).toFixed(2)}`)); 
+                        
                        
                     //}
-                    /*else{
-                        console.log(`G0 Z${Math.round(angle)}`);
-                        console.log("G4 P1");
-                        console.log(line);
-                    }*/
+                    //else{
+                    //    console.log(`G0 Z${Math.round(angle)}`);
+                    //    console.log("G4 P0.5");
+                        //console.log(`G0 X${prevcoords[0]+ox} Y${prevcoords[1]+oy}`)
+                    //    console.log(line);
+                        //console.log(line.replace(`X${x}`, `X${(x+ox).toFixed(2)}`).replace(`Y${y}`, `Y${(y+oy).toFixed(2)}`)); 
+                       
+                    //}
                     currentangle += Math.round(angle);
+                    prevcoords[0] = coords[0];
+                    prevcoords[1] = coords[1];
                     //console.log(`${line}`);
                     printInterim(linebuffer);
                     linebuffer = [];
+                    
                 }else{
                     //
                     linebuffer.push(line)
                 }
                 
             }else{
-                prevcoords = coords;
+                prevcoords[0] = coords[0];
+                prevcoords[1] = coords[1];
                 console.log(line);
             }
         }
@@ -98,7 +122,7 @@ const calculateTheta = (previous, current)=>{
         case -1:
             //TODO: check this!!
             //theta = prevtheta;
-            prevcoords = current; 
+            //prevcoords = current; 
             return 0;
 
         case 0:
@@ -138,7 +162,7 @@ const calculateTheta = (previous, current)=>{
 
     prevtheta = theta;
 
-    prevcoords = current;   
+    //prevcoords = current;   
     return dir * tomove;
     
     
@@ -148,6 +172,10 @@ const calculateTheta = (previous, current)=>{
 
 const deg = (rads)=>{
     return (180/Math.PI) * rads;
+}
+
+const rad = (deg)=>{
+    return deg * (Math.PI/180);
 }
 
 //need to only operate on shifts in steps where dx or dy > 1, else no point in turning blade.  So look ahead until eithe dx of dy reaches 1, then set the 
