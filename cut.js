@@ -15,7 +15,7 @@ let prevtheta = 0;
 let linebuffer = [];
 
 let currentangle = 0;
-let OFFSET       = 6.2; /* 3.1 == 1cm */
+let OFFSET       =  1;//6.2; /* 3.1 == 1cm */
 
 readInterface.on("close", function(){
     
@@ -43,32 +43,36 @@ readInterface.on('line', function(line) {
                    
                     const d =  Math.sqrt(((prevcoords[0]- coords[0]) * (prevcoords[0]- coords[0])) + ((prevcoords[1]- coords[1]) * (prevcoords[1]- coords[1])))
                     
-                    const ox = prevcoords[0] -  ((OFFSET * (prevcoords[0] - coords[0])) / d);
-                    const oy = prevcoords[1] -  ((OFFSET * (prevcoords[1] - coords[1])) / d);
+                    const ox = prevcoords[0] -  (((OFFSET+d) * (prevcoords[0] - coords[0])) / d);  //calculate offset extra length x
+                    const oy = prevcoords[1] -  (((OFFSET+d) * (prevcoords[1] - coords[1])) / d);  //calculate offset extra length y
                    
-                    const o2x = coords[0] + (coords[0] - prevcoords[0]) / d * OFFSET;
-                    const o2y = coords[1] + (coords[1] - prevcoords[1]) / d * OFFSET;
+                    const o2x = prevcoords[0] -  ((-OFFSET * (prevcoords[0] - coords[0])) / d);  //calculate offset extra length x
+                    const o2y = prevcoords[1] -  ((-OFFSET * (prevcoords[1] - coords[1])) / d);  //calculate offset extra length y
+                    //const o2x = coords[0] + (coords[0] - prevcoords[0]) / d * OFFSET;
+                    //const o2y = coords[1] + (coords[1] - prevcoords[1]) / d * OFFSET;
                    
-                    //if (Math.abs(angle) > 12){
-                        console.log("M3 S0");
-                        console.log(`G0 Z${Math.round(angle)}`)
-                        console.log(`G0 X${ox} Y${oy}`)
-                        console.log(`G4 P${Math.abs(angle/40)}`);
-                        console.log("M3 S1000");
-                        //console.log(line);
+                    if (Math.abs(angle) > 15){
+                        console.log(`G1 X${ox} Y${oy}`) // move the blade to beyond the end of the line
+                        console.log("M3 S1"); //move the blade up
+                        console.log(`G0 Z${Math.round(angle)}`) //spin the blade to the required angle                      
+                        console.log(`G4 P${Math.abs(angle/40)}`); //wait while blade moves into place
+                        console.log(`G1 X${o2x} Y${o2y}`) 
+                        console.log("M3 S1000"); //put the blade down
+                        console.log(line); //cut to next point
                        
-                        console.log(line.replace(`X${x}`, `X${(o2x).toFixed(2)}`).replace(`Y${y}`, `Y${(o2y).toFixed(2)}`)); 
-                        
+                        //console.log(line.replace(`X${x}`, `X${(o2x).toFixed(2)}`).replace(`Y${y}`, `Y${(o2y).toFixed(2)}`)); 
+                        //console.log(line.replace(`X${x}`, `X${x+OFFSET}`).replace(`Y${y}`, `Y${(y+OFFSET).toFixed(2)}`)); 
+                        //console.log(line.replace(`X${x}`, `X${(x+offset).toFixed(2)}`).replace(`Y${y}`, `Y${(y+offset).toFixed(2)}`)); 
                        
-                    //}
-                    //else{
-                    //    console.log(`G0 Z${Math.round(angle)}`);
-                    //    console.log("G4 P0.5");
-                        //console.log(`G0 X${prevcoords[0]+ox} Y${prevcoords[1]+oy}`)
-                    //    console.log(line);
+                       
+                    }
+                    else{
+                        console.log(`G0 Z${Math.round(angle)}`);
+                        console.log(`G4 P0.5`);
+                        console.log(line);
                         //console.log(line.replace(`X${x}`, `X${(x+ox).toFixed(2)}`).replace(`Y${y}`, `Y${(y+oy).toFixed(2)}`)); 
                        
-                    //}
+                    }
                     currentangle += Math.round(angle);
                     prevcoords[0] = coords[0];
                     prevcoords[1] = coords[1];
