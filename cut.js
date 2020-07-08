@@ -52,11 +52,12 @@ readInterface.on('line', function(line) {
                     //const o2y = coords[1] + (coords[1] - prevcoords[1]) / d * OFFSET;
                    
                     if (Math.abs(angle) > 15){
-                        console.log(`G1 X${ox} Y${oy}`) // move the blade to beyond the end of the line
+                        console.log(`G1 X${o2x} Y${o2y}`) 
+                        
                         console.log("M3 S1"); //move the blade up
                         console.log(`G0 Z${Math.round(angle)}`) //spin the blade to the required angle                      
                         console.log(`G4 P${Math.abs(angle/40)}`); //wait while blade moves into place
-                        console.log(`G1 X${o2x} Y${o2y}`) 
+                        console.log(`G1 X${ox} Y${oy}`) // move the blade to beyond the end of the line
                         console.log("M3 S1000"); //put the blade down
                         console.log(line); //cut to next point
                        
